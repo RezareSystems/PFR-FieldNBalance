@@ -39,6 +39,27 @@ namespace SVSModel.Models
             startSchedulleDate = startSchedulleDate.AddDays(1); //Start schedule the day after the last test or application
             return startSchedulleDate; 
         }
+
+        /// <summary>
+        /// Add up how many fertiliser application splits have been applied prior to the start of schedulling
+        /// </summary>
+        /// <param name="startSchedulleDate">Date that schedulling starts</param>
+        /// <param name="fert">The fertiliser already applied</param>
+        /// <param name="config">field configuration</param>
+        /// <returns>date to start schedulling</returns>
+        public static int splitsAppliedAlready(DateTime startSchedulleDate, Dictionary<DateTime, double> fert, Config config)
+        {
+            int splitsAppliedAlready = 0;
+            DateTime[] datesPassedAlready = Functions.DateSeries(config.Current.EstablishDate, startSchedulleDate);
+            foreach (DateTime d in datesPassedAlready)
+            {
+                if (fert[d]>0)
+                {
+                    splitsAppliedAlready += 1;
+                }
+            }
+            return splitsAppliedAlready;
+        }
         
         /// <summary>
         /// Adds specified establishment fert to the soil N then determines how much additional fertiliser N is required and when the crop will need it.
@@ -57,8 +78,10 @@ namespace SVSModel.Models
             Config config = thisSim.config;
             DateTime[] schedullingDates = Functions.DateSeries(startSchedulleDate, endScheduleDate);
 
+            int splitsApplied = splitsAppliedAlready(startSchedulleDate, thisSim.NFertiliser, config);
+
             // Set other variables needed to derive fertiliser requirement
-            int remainingSplits = thisSim.config.Field.Splits;
+            int remainingSplits = Math.Max(0,thisSim.config.Field.Splits - splitsApplied);
 
             // Determine dates that each fertiliser application should be made
             
